@@ -28,7 +28,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import FeatureExtractor.PacketHandle;
 import IDSmain.IDSmain;
-import Util.tcpdumpGetfile;
 import jpcap.JpcapCaptor;
 
 /**

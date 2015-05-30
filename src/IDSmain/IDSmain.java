@@ -1,6 +1,5 @@
 package IDSmain;
 
-import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,13 +12,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 import javax.swing.JApplet;
@@ -42,38 +37,8 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.time.Millisecond;
-import org.jfree.data.time.Second;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import weka.classifiers.trees.J48;
 import weka.core.Attribute;
 import weka.core.FastVector;
@@ -85,32 +50,40 @@ import FeatureExtractor.MapPortServices;
 import FeatureExtractor.PacketHandle;
 import FeatureExtractor.RawPacket;
 import IntruderDetector.DecisionTree;
+import OpenDaylightUtil.OdlFlowActions;
+import OpenDaylightUtil.SwitchIdList;
 import TcpdumpExtractor.TcpdumpDialog;
 import Util.NetworkMonitor;
 import jpcap.JpcapCaptor;
 import jpcap.PacketReceiver;
 import jpcap.packet.Packet;
-import jpcap.packet.TCPPacket;
 
 
 public class IDSmain extends JApplet implements ActionListener, WindowListener{
-	public static short runmode;
-	public static JFrame frame;
-    protected IntruderTable intruderData;
+    public static short runmode;
+    public static JFrame frame;
+    public static IntruderTable intruderData;
     protected JTable intruderTable;
     
     private String helpContents = "Need";
     private String aboutString = "Intrusion prevention system using flow management \ntechnologies to protect Software-Defined Network\n                                 May 2015";
     public static DateFormat timeFormat = new SimpleDateFormat("HH-mm-ss-MMM-dd-yyyy");
     public static String atktype;
-	private Thread captureThread;
-	JFileChooser chooser = new JFileChooser();
-	JpcapCaptor jpcap = null;
-
+    private Thread captureThread;
+    JFileChooser chooser = new JFileChooser();
+    JpcapCaptor jpcap = null;
+    
 	
     public static TimeSeries throughput = new TimeSeries("Network Throughput", Millisecond.class);
 
+  //------------------OpenDaylight config-------------------------------------------
+    public static Queue<String> switchID = null;
+    public static SwitchIdList switchIDlist = null;
+    public static OdlFlowActions newAction = null;
     
+    public static String controllerIP = null;
+    public static String adminAccount = null;
+    public static String adminPass = null;
     
   //------------------FeatureExtractior added-------------------------------------------	
     //Instance of RawPacket which is used by other Threads.
@@ -135,8 +108,8 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
     private Instances train;
     public static J48 tree;
     double classLabel;
-	private Thread DTProcessing;
-	private Thread pNetMonitor;
+    private Thread DTProcessing;
+    private Thread pNetMonitor;
     
     
     /*
@@ -304,11 +277,12 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
         IDSInstances = new Instances("IDS", IDSRealtimeAttributeSet, 0);       
 
         IDSInstances.setClassIndex(25);
+        
+        
 	}
 	
 	
 	public void init() {
-            System.out.println(System.getProperty("java.library.path"));
 		Container contentPane = this.getContentPane();
 		contentPane.repaint();
 		String frameName = "IDS";
@@ -496,7 +470,46 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 					System.out.println("You chose to open this file: "+ chooser.getSelectedFile().getName());
 				} else if (returnVal == JFileChooser.CANCEL_OPTION)
 					return;
+				/*
+				 try {
+				 jpcap = JpcapCaptor.openFile(chooser.getSelectedFile().toString());
+				 startCaptureThread();
+				 } catch (IOException e1) {
+				 // TODO Auto-generated catch block
+				 e1.printStackTrace();
+				 }
+				 */
+/***************************Doc file*****************************************
 				
+//				try {
+//					List<EtherealPacket> packets = Parser.read(chooser
+//							.getSelectedFile());
+//					if (packets != null) {
+//						for (EtherealPacket i : packets) {
+//							addPacket(i);
+//						}
+//					} else {
+//						JOptionPane
+//								.showMessageDialog(
+//										this,
+//										"The file you selected: \""
+//												+ chooser.getSelectedFile()
+//														.getName()
+//												+ "\" couldn't be parsed. It is either corupted or not a pcap file. Please choose another file.");
+//					}
+//				} catch (FileNotFoundException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					JOptionPane.showMessageDialog(frame,
+//							"Can't open file: " + chooser.getSelectedFile().getPath() + "\n\n"
+//									+ e.toString());
+//					e.printStackTrace();
+//				}
+ * 
+ ***********************************************************************************
+ */
 		
 			} else if (menu.getText().equals("Save")) {
 				int ret = chooser.showSaveDialog(frame);
@@ -508,6 +521,28 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 						}
 					}
 					
+/***********************************************************************************					
+					try {
+						Parser.write(model.getPackets(), file);
+						
+//						JpcapWriter writer = JpcapWriter.openDumpFile(jpcap,
+//								file.getPath());
+//
+//						ArrayList<EtherealPacket> packets = model.getPackets();
+//						for (EtherealPacket p : packets)
+//							writer.writePacket(p.getJPCapPacket());
+//
+//						writer.close();
+						
+						
+					} catch (java.io.IOException e) {
+						e.printStackTrace();
+						JOptionPane.showMessageDialog(frame,
+								"Can't save file: " + file.getPath() + "\n\n"
+										+ e.toString());
+					}
+*************************************************************************************
+*/
 				}
 				
 				
@@ -520,7 +555,12 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 
 				try {
 					jpcap = IDSCaptureDialog.getJpcap(frame);
+					//Class c = Class.forName("jpcap.JpcapCaptor");
+				//} catch (ClassNotFoundException e) {
+					//JOptionPane.showMessageDialog(frame, errorString);
+					//return;
 				} catch (UnsatisfiedLinkError e) {
+//					JOptionPane.showMessageDialog(frame, errorString);
 					return;
 				}
 
@@ -549,6 +589,7 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 				try {
 					OptionsDialog.getOptionsDialog(frame);
 				} catch (UnsatisfiedLinkError e) {
+//					JOptionPane.showMessageDialog(frame, errorString);
 					return;
 				}
 
@@ -562,8 +603,14 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 			
 			} else if (menu.getText().equals("Pcap extractor")) {
 				try {
+//					JFrame nframe = new JFrame();
 					TcpdumpDialog.getTcpdumpDialog();
+					//Class c = Class.forName("jpcap.JpcapCaptor");
+				//} catch (ClassNotFoundException e) {
+					//JOptionPane.showMessageDialog(frame, errorString);
+					//return;
 				} catch (UnsatisfiedLinkError e) {
+//					JOptionPane.showMessageDialog(frame, errorString);
 					return;
 				}
 
@@ -617,6 +664,7 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 			public void run() {
 				while (captureThread != null) {
 					if (jpcap.processPacket(1, handler) == 0)
+						//stopCaptureThread();
 						Thread.yield();
 				}
 				System.out.println("Exiting Capture Thread");
@@ -650,7 +698,6 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
         pNetMonitor = null;
 	}
 	
-	int curIndex=0;
 	private PacketReceiver handler = new PacketReceiver() {
 		public void receivePacket(Packet packet) {
 			addRawPacket(packet);
@@ -663,11 +710,8 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 //			curIndex++;
 //			if (packet instanceof TCPPacket){
 //				TCPPacket p = (TCPPacket)packet;
-//				Intruder newIntruder = new Intruder(curIndex, (packet.sec* 1000000 + packet.usec), p.dst_ip.toString(), p.src_ip.toString(), "DOS");
-//				addIntruder(newIntruder);
-//				if (intruderTable.getRowCount()>0){
-//				intruderTable.getValueAt((intruderTable.getRowCount()-1),(intruderTable.getColumnCount()-1)); 
-//				}
+//				
+//				
 //			}
 		}
 	};
@@ -696,10 +740,7 @@ public class IDSmain extends JApplet implements ActionListener, WindowListener{
 	
 	
 	
-	private synchronized void addIntruder(Intruder newIntruder) {
-		// TODO Auto-generated method stub
-		intruderData.addIntruder(newIntruder);
-	}
+	
 
 	public void setName(String name) {
 		super.setName(name);

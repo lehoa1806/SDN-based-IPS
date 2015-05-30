@@ -1,5 +1,7 @@
 package IDSmain;
 
+import OpenDaylightUtil.OdlFlowActions;
+import OpenDaylightUtil.SwitchIdList;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -24,13 +26,8 @@ public class OptionsDialog extends JDialog implements ActionListener
 	 */
 	private static final long serialVersionUID = 1L;
 	//Controller options
-	public String controllerIP;
-	public String controllerPort;
-	public String controllerAccount;
-	public String controllerPass;	
-	
+
 	JTextField ipAddrText;
-	JTextField ipPort;
 	JTextField userContent;
 	JPasswordField passwordContent;
 	
@@ -40,30 +37,16 @@ public class OptionsDialog extends JDialog implements ActionListener
 	}
 	public OptionsDialog(JFrame nframe){
 		super(nOptionsDialog,"Options",true);
-
-		this.controllerIP=null;
-		this.controllerPort=null;
-		this.controllerAccount=null;
-		this.controllerPass=null;
-		
-		
-		
+	
 		JPanel controllerAddress = new JPanel();
 		controllerAddress.setLayout(new BoxLayout(controllerAddress,BoxLayout.X_AXIS));
-		JLabel ipAddr = new JLabel("IP");
-		JLabel portAddr = new JLabel(":");
+		JLabel ipAddr = new JLabel("Controller IP");
 		ipAddrText = new JTextField(20);
 		ipAddrText.setMaximumSize(new Dimension(Short.MAX_VALUE,20));
-		ipPort = new JTextField(5);
-		ipPort.setMaximumSize(new Dimension(Short.MAX_VALUE,20));
 		controllerAddress.add(Box.createRigidArea(new Dimension(10,10)));
 		controllerAddress.add(ipAddr);
 		controllerAddress.add(Box.createRigidArea(new Dimension(10,10)));
 		controllerAddress.add(ipAddrText);
-		controllerAddress.add(Box.createRigidArea(new Dimension(3,10)));
-		controllerAddress.add(portAddr);
-		controllerAddress.add(Box.createRigidArea(new Dimension(3,10)));
-		controllerAddress.add(ipPort);
 		controllerAddress.add(Box.createRigidArea(new Dimension(10,10)));
 		controllerAddress.setBorder(BorderFactory.createTitledBorder("Controller address"));
 		JPanel controllerAddressBox = new JPanel();
@@ -138,16 +121,18 @@ public class OptionsDialog extends JDialog implements ActionListener
 	@Override
 	public void actionPerformed(ActionEvent evt){
     	String cmd=evt.getActionCommand();
-		if(cmd.equals("OK")){
-        	this.controllerIP = ipAddrText.getText();
-        	this.controllerPort = ipPort.getText();
-        	this.controllerAccount = userContent.getText();
-        	this.controllerPass = passwordContent.getText() ;	
-        	System.out.println(this.controllerIP+":"+this.controllerPort + "         " +this.controllerAccount+"____"+this.controllerPass);
-        
-		}else if(cmd.equals("Cancel")){
-			dispose();
-		}
+            if(cmd.equals("OK")){
+            IDSmain.controllerIP = ipAddrText.getText();
+            IDSmain.adminAccount = userContent.getText();
+            IDSmain.adminPass = passwordContent.getText() ;	
+            IDSmain.switchIDlist = new SwitchIdList(ipAddrText.getText(), userContent.getText(), passwordContent.getText());
+            IDSmain.newAction = new OdlFlowActions(ipAddrText.getText(), userContent.getText(), passwordContent.getText());
+            IDSmain.switchID = IDSmain.switchIDlist.getSwitchIdList();
+            System.out.println(IDSmain.controllerIP+":"+IDSmain.adminAccount + "         " +IDSmain.adminPass);
+            dispose();    
+            }else if(cmd.equals("Cancel")){
+                dispose();
+            }
 	}
 	
 	public static void getOptionsDialog(JFrame nframe){

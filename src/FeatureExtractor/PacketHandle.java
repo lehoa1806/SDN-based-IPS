@@ -7,8 +7,8 @@ package FeatureExtractor;
 import IDSmain.IDSmain;
 import TcpdumpExtractor.TcpdumpDialog;
 import TcpdumpExtractor.TcpdumpExtractor;
-import Util.tcpdumpGetfile;
-import Util.tcpdumpPacketFilter;
+import TcpdumpExtractor.tcpdumpGetfile;
+import TcpdumpExtractor.tcpdumpPacketFilter;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -27,13 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 //import org.apache.mina.filter.firewall.Subnet;
-
-
-
-
-
-
-
 
 
 import javax.swing.JFrame;
@@ -246,10 +239,11 @@ public class PacketHandle implements Runnable {
 				try {
 					captor = JpcapCaptor.openFile(TcpdumpDialog.fileAddress);
 					long sys_time = 0;
+					int index = 0;
 					while(true){
 					    Packet packet=captor.getPacket();
-		                System.out.println(packet.sec);
-
+		                index ++;
+		                System.out.println(index);
 					    if(Thread.interrupted())
 							break;
 					    if(packet==null || packet==Packet.EOF) {
@@ -273,9 +267,12 @@ public class PacketHandle implements Runnable {
 					    else {
 					    	sys_time = (packet.sec*1000000+packet.usec)/1000;
 					    	praseIPPacketInfo(packet);
-					    	this.checkConnTCPdump(sys_time);
-					    	if (featureEntries.getSize() != 0) {
-					    		tcpdumpExtractor.runTcpdump(IDSmain.atktype);
+					    	if(index % 10 == 0){
+					    		
+						    	this.checkConnTCPdump(sys_time);
+						    	if (featureEntries.getSize() != 0) {
+						    		tcpdumpExtractor.runTcpdump(IDSmain.atktype);
+						    	}
 					    	}
 					    }           
 					}
@@ -393,7 +390,8 @@ public class PacketHandle implements Runnable {
 					Thread tConnHandle = new Thread(new ConnectionHandle(tempConnection.realTimeFeature));
 					tConnHandle.start();
 				}
-				this.addConnection(key, tempConnection);
+				else
+					this.addConnection(key, tempConnection);
 			}
 			else if(packet.protocol == IPPacket.IPPROTO_UDP){
 				if (!(packet instanceof UDPPacket)){
@@ -452,23 +450,21 @@ public class PacketHandle implements Runnable {
 				}
 			}
 			else if (packet.protocol == IPPacket.IPPROTO_ICMP){
-//				System.out.println("ICMP packets");
-	//			ICMPPacket icmp = (ICMPPacket)packet;
 				String key1 = packet.src_ip.toString() + packet.dst_ip.toString();
 				String key2 = packet.dst_ip.toString() + packet.src_ip.toString();
 				String key;
 				TempConn tempConnection;
 				RealTimeFeature realTimeFeature;
-				if(isContainKey(key1)||isContainKey(key2)){
-					if(isContainKey(key1)){
-						tempConnection = getKey(key1);
+				if(this.isContainKey(key1)||this.isContainKey(key2)){
+					if(this.isContainKey(key1)){
+						tempConnection = this.getKey(key1);
 						key = key1;
 						tempConnection.realTimeFeature.addSrcBytes(dataLength);
 						tempConnection.realTimeFeature.addNumPktSrc();
 						this.removeConnection(key);
 					}
 					else{ 
-						tempConnection = getKey(key2);
+						tempConnection = this.getKey(key2);
 						key = key2;
 						tempConnection.realTimeFeature.addDstBytes(dataLength);
 						tempConnection.realTimeFeature.addNumPktDst();
@@ -479,12 +475,19 @@ public class PacketHandle implements Runnable {
 					realTimeFeature = new RealTimeFeature();
 					realTimeFeature.setStartTime(packet.sec, packet.usec);
 					realTimeFeature.addSrcBytes(dataLength);
-					realTimeFeature.setProtocol("ICMP");
+					if(packet.protocol == IPPacket.IPPROTO_ICMP){
+						realTimeFeature.setService("icmp");
+						realTimeFeature.setProtocol("ICMP");
+					}
+					else{
+						realTimeFeature.setService("ip");
+						realTimeFeature.setProtocol("IP");
+					}
 					realTimeFeature.setSrcIp(packet.src_ip);
 					realTimeFeature.setDstIp(packet.dst_ip);
 					realTimeFeature.addNumPktSrc();
 					key = key1;
-					realTimeFeature.setService("icmp");
+					
 					tempConnection = new TempConn((packet.sec*1000000 + packet.usec)/1000, realTimeFeature);
 				}
 				tempConnection.realTimeFeature.addNumPackets();

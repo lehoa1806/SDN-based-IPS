@@ -159,25 +159,30 @@ public class IDSCaptureDialog extends JDialog implements ActionListener
         if(cmd.equals("Choose")){
         	IDSmain.atktype = (String) classChooser.getSelectedItem();
         }
-		if(cmd.equals("OK")){
-	        File f = new File("Train.arff");
-	        if(!f.exists() && (IDSmain.runmode == 0)){
-	            JFrame frame = new JFrame();
-	            JOptionPane.showMessageDialog(frame,"Training set not existed, please set up new file");
-	        } 
-	        else {
-                try {
-					jpcap=JpcapCaptor.openDevice(devicelist[devicelistBox.getSelectedIndex()],12500000,true , 50);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}finally{
-					dispose();
-				}
-	        }
-		}else if(cmd.equals("Cancel")){
-			dispose();
-		}
+        if(cmd.equals("OK")){
+            File f = new File("Train.arff");
+            if((IDSmain.runmode == 0) && ( (IDSmain.controllerIP == null) || (IDSmain.adminAccount == null) || (IDSmain.adminPass == null) )){
+                JFrame frame = new JFrame();
+                JOptionPane.showMessageDialog(frame,"Can not connect to Controller, please check your configuration");
+
+            }
+            else if(!f.exists() && (IDSmain.runmode == 0)){
+                JFrame frame = new JFrame();
+                JOptionPane.showMessageDialog(frame,"Training set not existed, please set up new file");
+            } 
+            else {
+            try {
+                                    jpcap=JpcapCaptor.openDevice(devicelist[devicelistBox.getSelectedIndex()],12500000,true , 50);
+                            } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                            }finally{
+                                    dispose();
+                            }
+            }
+            }else if(cmd.equals("Cancel")){
+                    dispose();
+            }
 	}
 	
 	public static JpcapCaptor getJpcap(JFrame mFrame){
