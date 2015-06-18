@@ -73,13 +73,15 @@ public class DecisionTree implements Runnable {
 //                            intruderTable.getValueAt((intruderTable.getRowCount()-1),(intruderTable.getColumnCount()-1)); 
 //                            }
                             Flow newFlow = new Flow(0, IDSmain.IDSmain.newAction.getFlowID());
-                            newFlow.setSourceIP(sourceIP);
-                            newFlow.setDestIP(destIP);
-                            newFlow.buildDropFlow(); 
                             Queue<String> pSwitchID = IDSmain.IDSmain.switchID;
                             for(int i=0; i < numSwitch; i++){
-                                String SwitchID = pSwitchID.poll();                             
-                                IDSmain.IDSmain.newAction.sendDroptoSW(SwitchID, newFlow);
+                                String SwitchID = pSwitchID.poll();
+                                newflow.setSwitchID(SwitchID);
+                                newFlow.setSourceIP(sourceIP);
+                                newFlow.setDestIP(destIP);
+                                newFlow.buildDropFlow(); 
+                                newFlow.getFlowKey();
+                                IDSmain.IDSmain.newAction.sendPuttoSW(newFlow);
                             }
                             
                             
